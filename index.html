@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kytes Adoption Updater</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="logo"><i class="ti ti-table-share"></i></div>
+    <div>
+      <h1>Kytes adoption updater</h1>
+      <p class="sub">Upload your Adoption Sheet + any Kytes feature exports → get values in exact row order → copy-paste per PGH.</p>
+    </div>
+  </div>
+
+  <!-- STEP 1: Adoption Sheet -->
+  <div class="card">
+    <div class="card-title"><span class="step-num active" id="n1">1</span> Upload Kytes Adoption Sheet</div>
+    <p class="hint">Download from SharePoint, drop here. This sets the row order for all PGH sheets.</p>
+    <div class="drop-zone" id="dz-adoption" onclick="document.getElementById('fi-adoption').click()">
+      <i class="ti ti-file-spreadsheet"></i>
+      <p>Drop Adoption Sheet here</p>
+      <span>.xlsx · must have PGH 1–4 sheets</span>
+    </div>
+    <input type="file" id="fi-adoption" accept=".xlsx" />
+    <div id="adoption-status"></div>
+  </div>
+
+  <!-- STEP 2: Feature Exports -->
+  <div class="card" id="card-exports">
+    <div class="card-title"><span class="step-num" id="n2">2</span> Upload Kytes feature exports</div>
+    <p class="hint">Drop all feature files at once — MRN, PO, WO, GRN, DPR, TDS, Drawing, Vendor Invoice. The tool auto-detects each one.</p>
+    <div class="drop-zone multi" id="dz-exports" onclick="document.getElementById('fi-exports').click()">
+      <i class="ti ti-upload"></i>
+      <p>Drop all feature export files here</p>
+      <span>Multiple files at once · .xlsx · auto-detected by column structure</span>
+    </div>
+    <input type="file" id="fi-exports" accept=".xlsx" multiple />
+    <div class="file-list" id="file-list"></div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="card" id="card-output" style="display:none">
+    <div class="card-title">
+      <span class="step-num done"><i class="ti ti-check" style="font-size:11px"></i></span>
+      Results — in exact row order of your Adoption Sheet
+    </div>
+
+    <div class="stats" id="stats-row"></div>
+
+    <!-- PGH tabs -->
+    <div class="tab-row" id="tab-row"></div>
+
+    <!-- Feature column tabs within each PGH -->
+    <div class="feature-tab-row" id="feature-tab-row"></div>
+
+    <!-- Tables -->
+    <div id="pgh-tables"></div>
+
+    <div class="action-row">
+      <button class="btn primary" id="copy-btn" onclick="copyCurrentColumn()">
+        <i class="ti ti-clipboard"></i> Copy column
+      </button>
+      <button class="btn secondary" id="copy-date-btn" onclick="copyCurrentColumn(true)" style="display:none">
+        <i class="ti ti-calendar"></i> Copy Date
+      </button>
+      <button class="btn" onclick="downloadExcel()">
+        <i class="ti ti-download"></i> Download all as Excel
+      </button>
+      <button class="btn danger" onclick="resetAll()">
+        <i class="ti ti-refresh"></i> Start over
+      </button>
+    </div>
+
+    <div class="notice">
+      <i class="ti ti-info-circle"></i>
+      <span>
+        Select a <strong>PGH tab</strong> and a <strong>feature tab</strong> → click <strong>Copy column</strong> → 
+        open SharePoint Adoption Sheet → click the first cell of that feature column for that PGH → <strong>Ctrl+V</strong>.
+        Values are in the exact same row order as your sheet.
+      </span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
