@@ -66,7 +66,7 @@ function handleAdoptionFile(file) {
 
   readFile(file, ab => {
     try {
-      const wb    = XLSX.read(ab, { type: 'array' });
+      const wb    = XLSX.read(ab, { type: 'array', cellDates: true });
       const order = {};
       nameToId    = {};
       let total   = 0;
@@ -87,12 +87,50 @@ function handleAdoptionFile(file) {
         const pidIdx   = headers.findIndex(h => /project.?id/i.test(String(h)));
         const titleIdx = headers.findIndex(h => /project.?title|project.?name/i.test(String(h)));
         if (pidIdx < 0) return;
+        
+        const dateIndices = {};
+        FEATURES.forEach(f => {
+          if (f.dateCol) {
+            dateIndices[f.label] = headers.findIndex(h => h && String(h).trim().toLowerCase() === f.dateCol.toLowerCase());
+          }
+        });
 
         order[sheet] = raw.slice(hRow + 1)
-          .map(row => ({
-            pid:   String(row[pidIdx]   || '').trim(),
-            title: String(row[titleIdx] || '').trim()
-          }))
+          .map(row => {
+            let mDates = {};
+            FEATURES.forEach(f => {
+              if (f.dateCol && dateIndices[f.label] >= 0) {
+                 let val = row[dateIndices[f.label]];
+                 if (val) {
+                   let d = null;
+                   if (val instanceof Date) d = val;
+                   else if (typeof val === 'number') d = new Date(Math.round((val - 25569) * 86400 * 1000));
+                   else if (typeof val === 'string') {
+                     let str = val.trim();
+                     let parts = str.split(' ')[0].split(/[-/]/);
+                     if (parts.length === 3) {
+                       let p0 = parseInt(parts[0], 10);
+                       let p1 = parseInt(parts[1], 10);
+                       let p2 = parseInt(parts[2], 10);
+                       if (p2 < 100) p2 += 2000;
+                       if (p0 > 1000) d = new Date(p0, p1 - 1, p2);
+                       else d = new Date(p2, p1 - 1, p0);
+                     } else d = new Date(str);
+                   }
+                   if (d && !isNaN(d.getTime())) {
+                     mDates[f.label] = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+                   } else {
+                     mDates[f.label] = String(val).trim();
+                   }
+                 }
+              }
+            });
+            return {
+              pid:   String(row[pidIdx]   || '').trim(),
+              title: String(row[titleIdx] || '').trim(),
+              mDates
+            };
+          })
           .filter(r => /^DP\d+/i.test(r.pid));
 
         // Build name→pid map for GRN matching
@@ -338,8 +376,13 @@ function buildOutput() {
         const val     = counts[p.pid] !== undefined ? counts[p.pid] : 0;
         const hasData = counts[p.pid] !== undefined;
         let dateVal = '';
-        if (feat.dateCol && featureDates[feat.label] && featureDates[feat.label][p.pid]) {
-          dateVal = featureDates[feat.label][p.pid];
+        if (feat.dateCol) {
+          if (featureDates[feat.label] && featureDates[feat.label][p.pid]) {
+            dateVal = featureDates[feat.label][p.pid];
+          }
+          if ((val === 0 || !dateVal) && p.mDates && p.mDates[feat.label]) {
+            dateVal = p.mDates[feat.label];
+          }
         }
         const dateTd = feat.dateCol ? `<td class="td-date">${esc(dateVal)}</td>` : '';
         return `<tr class="${!hasData ? 'row-missing' : ''}">
@@ -462,9 +505,14 @@ function downloadExcel() {
     const data = projects.map((p, i) => {
       const row = { '#': i + 1, 'Project ID': p.pid, 'Project Title': p.title };
       loadedFeatures.forEach(f => {
-        row[f.col] = featureData[f.label][p.pid] !== undefined ? featureData[f.label][p.pid] : 0;
+        let count = featureData[f.label][p.pid] !== undefined ? featureData[f.label][p.pid] : 0;
+        row[f.col] = count;
         if (f.dateCol) {
-          row[f.dateCol] = featureDates[f.label] && featureDates[f.label][p.pid] ? featureDates[f.label][p.pid] : '';
+          let dVal = featureDates[f.label] && featureDates[f.label][p.pid] ? featureDates[f.label][p.pid] : '';
+          if ((count === 0 || !dVal) && p.mDates && p.mDates[f.label]) {
+            dVal = p.mDates[f.label];
+          }
+          row[f.dateCol] = dVal;
         }
       });
       return row;
