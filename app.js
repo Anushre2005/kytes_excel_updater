@@ -448,12 +448,20 @@ function downloadExcel() {
       const row = { '#': i + 1, 'Project ID': p.pid, 'Project Title': p.title };
       loadedFeatures.forEach(f => {
         row[f.col] = featureData[f.label][p.pid] !== undefined ? featureData[f.label][p.pid] : 0;
+        if (f.dateCol) {
+          row[f.dateCol] = featureDates[f.label] && featureDates[f.label][p.pid] ? featureDates[f.label][p.pid] : '';
+        }
       });
       return row;
     });
 
     const ws = XLSX.utils.json_to_sheet(data);
-    ws['!cols'] = [{ wch: 5 }, { wch: 12 }, { wch: 42 }, ...loadedFeatures.map(() => ({ wch: 16 }))];
+    const cols = [{ wch: 5 }, { wch: 12 }, { wch: 42 }];
+    loadedFeatures.forEach(f => {
+      cols.push({ wch: 16 });
+      if (f.dateCol) cols.push({ wch: 22 });
+    });
+    ws['!cols'] = cols;
     XLSX.utils.book_append_sheet(wb, ws, sheet);
   });
 
