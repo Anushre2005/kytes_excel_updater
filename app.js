@@ -455,12 +455,18 @@ function downloadExcel() {
       return row;
     });
 
-    const ws = XLSX.utils.json_to_sheet(data);
+    const header = ['#', 'Project ID', 'Project Title'];
     const cols = [{ wch: 5 }, { wch: 12 }, { wch: 42 }];
     loadedFeatures.forEach(f => {
+      header.push(f.col);
       cols.push({ wch: 16 });
-      if (f.dateCol) cols.push({ wch: 22 });
+      if (f.dateCol) {
+        header.push(f.dateCol);
+        cols.push({ wch: 22 });
+      }
     });
+
+    const ws = XLSX.utils.json_to_sheet(data, { header: header });
     ws['!cols'] = cols;
     XLSX.utils.book_append_sheet(wb, ws, sheet);
   });
