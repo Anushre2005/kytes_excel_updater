@@ -91,11 +91,12 @@ function handleAdoptionFile(file) {
         const dateIndices = {};
         FEATURES.forEach(f => {
           if (f.dateCol) {
-            let regex = new RegExp(f.label + '.*date', 'i');
-            dateIndices[f.label] = headers.findIndex(h => h && (
-              String(h).replace(/\s+/g, ' ').trim().toLowerCase() === f.dateCol.toLowerCase() ||
-              regex.test(String(h))
-            ));
+            const lbl = f.label.toLowerCase();
+            dateIndices[f.label] = headers.findIndex(h => {
+              if (!h) return false;
+              const s = String(h).toLowerCase();
+              return (s.includes(lbl) && s.includes('date')) || s === f.dateCol.toLowerCase();
+            });
           }
         });
 
