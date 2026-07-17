@@ -140,7 +140,7 @@ function handleExportFiles(files) {
 function parseFeatureFile(filename, ab) {
   try {
     const wb   = XLSX.read(ab, { type: 'array', cellDates: true });
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: false });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: true });
     if (!rows.length) return;
 
     const keys = Object.keys(rows[0]);
