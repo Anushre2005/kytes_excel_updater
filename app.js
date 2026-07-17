@@ -222,7 +222,22 @@ function parseFeatureFile(filename, ab) {
           if (rawDate instanceof Date) {
             d = rawDate;
           } else if (typeof rawDate === 'string') {
-            d = new Date(rawDate);
+            let str = rawDate.trim();
+            const datePart = str.split(' ')[0];
+            const parts = datePart.split(/[-/]/);
+            if (parts.length === 3) {
+               let p0 = parseInt(parts[0], 10);
+               let p1 = parseInt(parts[1], 10);
+               let p2 = parseInt(parts[2], 10);
+               if (p2 < 100) p2 += 2000;
+               if (p0 > 1000) {
+                 d = new Date(p0, p1 - 1, p2); // YYYY-MM-DD
+               } else {
+                 d = new Date(p2, p1 - 1, p0); // DD-MM-YYYY
+               }
+            } else {
+               d = new Date(str);
+            }
           } else if (typeof rawDate === 'number') {
             d = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
           }
